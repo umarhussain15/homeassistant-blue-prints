@@ -87,25 +87,25 @@ blueprint:
     fajr_mp3:
       name: Path to Fajr adhan MP3 (Optional)
       description: Enter the path where your custom media player is stored. Examples, media-source://media_source/local/fajr_adhan.mp3 (local path is /media/fajr_adhan.mp3), or an address such as https://www.islamcan.com/audio/adhan/azan1.mp3. Defaults to my Github
-      default: https://github.com/umarhussain15/homeassistant-blue-prints/adhan-audtion/blob/trunk/adhan_fajr.mp3?raw=true
+      default: https://github.com/umarhussain15/homeassistant-blue-prints/blob/trunk/adhan-audio/adhan_fajr.mp3?raw=true
       selector:
         text:
     adhan_mp3:
       name: Path to adhan MP3 (Optional)
       description: Enter the path where your custom media player is stored. Examples, media-source://media_source/local/adhan.mp3 (local path is /media/adhan.mp3), or an address such as https://www.islamcan.com/audio/adhan/azan1.mp3. Defaults to my Github
-      default: https://github.com/umarhussain15/homeassistant-blue-prints/adhan-audtion/blob/trunk/adhan.mp3?raw=true
+      default: https://github.com/umarhussain15/homeassistant-blue-prints/blob/trunk/adhan-audio/adhan.mp3?raw=true
       selector:
         text:
     suhoor_mp3:
       name: Path to Suhoor dua MP3 (Optional)
       description: Enter the path where your custom media player is stored. Examples, media-source://media_source/local/suhoor_dua.mp3 (local path is /media/suhoor_dua.mp3), or an address such as https://www.islamcan.com/audio/adhan/azan1.mp3. Defaults to my Github
-      default: https://github.com/umarhussain15/homeassistant-blue-prints/adhan-audtion/blob/trunk/suhoor_dua.mp3?raw=true
+      default: https://github.com/umarhussain15/homeassistant-blue-prints/blob/trunk/adhan-audio/suhoor_dua.mp3?raw=true
       selector:
         text:
     iftaar_mp3:
       name: Path to Iftaar dua MP3 (Optional)
       description: Enter the path where your custom media is stored. Examples, media-source://media_source/local/iftaar_dua.mp3 (local path is /media/iftar_dua.mp3), or an address such as https://www.islamcan.com/audio/adhan/azan1.mp3. Defaults to my Github
-      default: https://github.com/umarhussain15/homeassistant-blue-prints/adhan-audtion/blob/trunk/iftar_dua.mp3?raw=true
+      default: https://github.com/umarhussain15/homeassistant-blue-prints/blob/trunk/adhan-audio/iftar_dua.mp3?raw=true
       selector:
         text:
 variables:
