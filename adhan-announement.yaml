@@ -1,0 +1,483 @@
+blueprint:
+  name: 🔊 Adhan Announcement V2
+  description: Play the adhan on selected speakers while also pausing media players of your choice. You can also add islamic month sensor to play suhoor and iftar dua. You can also optionally disable specific adhans.
+  domain: automation
+  input:
+    play_media_player:
+      name: Media players to play
+      description: The Media players to play the Adhan on
+      selector:
+        target:
+          entity:
+            domain: media_player
+    wait_media_player:
+      name: Media player to wait for
+      description: The media player to wait for and check if adhan is finished and continue the automation. Pick any 1 media player you selected above.
+      selector:
+        entity:
+          domain: media_player
+    mute_tv:
+      name: Media player to mute (Optional)
+      description: The Media player to mute when the Adhan plays
+      default: {}
+      selector:
+        entity:
+          domain: media_player
+    pause_for_calendar_event:
+      name: Pause for calendar event (Optional)
+      description: If this calendar has an event for me, then pause the Adhan play
+      default: {}
+      selector:
+        entity:
+          domain: calendar
+    pause_media_player:
+      name: Media players to pause (Optional)
+      description: The Media players to pause when the Adhan plays. Such as TVs
+      default: {}
+      selector:
+        target:
+          entity:
+            domain: media_player
+    resume_media:
+      name: Resume paused media players after adhan?
+      description: Should it resume all paused media players after the adhan has played?
+      default: false
+      selector:
+        boolean:
+    fajr:
+      name: Play on fajr?
+      description: Should it play the adhan for fajr?
+      default: true
+      selector:
+        boolean:
+    dhuhr:
+      name: Play on dhuhr?
+      description: Should it play the adhan for dhuhr?
+      default: true
+      selector:
+        boolean:
+    asr:
+      name: Play on asr?
+      description: Should it play the adhan for asr?
+      default: true
+      selector:
+        boolean:
+    maghrib:
+      name: Play on maghrib?
+      description: Should it play the adhan for maghrib?
+      default: true
+      selector:
+        boolean:
+    isha:
+      name: Play on isha?
+      description: Should it play the adhan for isha?
+      default: true
+      selector:
+        boolean:
+    islamic_month_sensor:
+      name: Islamic month sensor (Optional)
+      description: The sensor to check what month it is in the islamic calendar
+      selector:
+        entity:
+    islamic_month_sensor_value:
+      name: Islamic month sensor value (Optional)
+      description: The value to check from the sensor to see if it is Ramadan
+      selector:
+        text:
+    fajr_mp3:
+      name: Path to Fajr adhan MP3 (Optional)
+      description: Enter the path where your custom media player is stored. Examples, media-source://media_source/local/fajr_adhan.mp3 (local path is /media/fajr_adhan.mp3), or an address such as https://www.islamcan.com/audio/adhan/azan1.mp3. Defaults to my Github
+      default: https://github.com/umarhussain15/homeassistant-blue-prints/adhan-audtion/blob/trunk/adhan_fajr.mp3?raw=true
+      selector:
+        text:
+    adhan_mp3:
+      name: Path to adhan MP3 (Optional)
+      description: Enter the path where your custom media player is stored. Examples, media-source://media_source/local/adhan.mp3 (local path is /media/adhan.mp3), or an address such as https://www.islamcan.com/audio/adhan/azan1.mp3. Defaults to my Github
+      default: https://github.com/umarhussain15/homeassistant-blue-prints/adhan-audtion/blob/trunk/adhan.mp3?raw=true
+      selector:
+        text:
+    suhoor_mp3:
+      name: Path to Suhoor dua MP3 (Optional)
+      description: Enter the path where your custom media player is stored. Examples, media-source://media_source/local/suhoor_dua.mp3 (local path is /media/suhoor_dua.mp3), or an address such as https://www.islamcan.com/audio/adhan/azan1.mp3. Defaults to my Github
+      default: https://github.com/umarhussain15/homeassistant-blue-prints/adhan-audtion/blob/trunk/suhoor_dua.mp3?raw=true
+      selector:
+        text:
+    iftaar_mp3:
+      name: Path to Iftaar dua MP3 (Optional)
+      description: Enter the path where your custom media is stored. Examples, media-source://media_source/local/iftaar_dua.mp3 (local path is /media/iftar_dua.mp3), or an address such as https://www.islamcan.com/audio/adhan/azan1.mp3. Defaults to my Github
+      default: https://github.com/umarhussain15/homeassistant-blue-prints/adhan-audtion/blob/trunk/iftar_dua.mp3?raw=true
+      selector:
+        text:
+variables:
+  wait_media_player: !input wait_media_player
+  play_fajr: !input fajr
+  play_dhuhr: !input dhuhr
+  play_asr: !input asr
+  play_maghrib: !input maghrib
+  play_isha: !input isha
+  media_resume: !input resume_media
+  calendar_event: !input pause_for_calendar_event
+  mute_tv: !input mute_tv
+  pause_media_player: !input pause_media_player
+
+trigger:
+  - platform: time
+    at: sensor.fajr_adhan
+    id: fajr_trigger
+  - platform: time
+    at: sensor.dhuhr_adhan
+    id: dhuhr_trigger
+  - platform: time
+    at: sensor.asr_adhan
+    id: asr_trigger
+  - platform: time
+    at: sensor.maghrib_adhan
+    id: maghrib_trigger
+  - platform: time
+    at: sensor.isha_adhan
+    id: isha_trigger
+
+action:
+  # Global check for Calendar event.
+  # If the input is set AND the calendar is 'on' (busy), stop the automation.
+  # If input is empty ({}) or state is 'off', continue.
+  - condition: template
+    value_template: "{{ calendar_event == {} or is_state(calendar_event, 'off') }}"
+
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: !input islamic_month_sensor
+            state: !input islamic_month_sensor_value
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: and
+                    conditions:
+                      - condition: trigger
+                        id: fajr_trigger
+                      - condition: template
+                        value_template: "{{ play_fajr == true }}"
+                sequence:
+                  # CHANGE 3: Conditional Pause
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ pause_media_player != {} }}"
+                        sequence:
+                          - service: media_player.media_pause
+                            target: !input pause_media_player
+                            data: {}
+
+                  # Conditional Mute
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ mute_tv != {} }}"
+                        sequence:
+                          - service: media_player.volume_mute
+                            target:
+                              entity_id: !input mute_tv
+                            data:
+                              is_volume_muted: true
+
+                  - service: media_player.play_media
+                    target: !input play_media_player
+                    data:
+                      media_content_id: !input suhoor_mp3
+                      media_content_type: mp3
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: 2
+                      milliseconds: 0
+                  - wait_template: "{{ is_state(wait_media_player, 'idle') }}"
+                    timeout: 00:05:00
+                  - service: media_player.play_media
+                    target: !input play_media_player
+                    data:
+                      media_content_id: !input fajr_mp3
+                      media_content_type: mp3
+                  - condition: template
+                    value_template: "{{ media_resume }}"
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: 2
+                      milliseconds: 0
+                  - wait_template: "{{ is_state(wait_media_player, 'idle') }}"
+                    timeout: 00:05:00
+
+                  # CHANGE 3: Conditional Resume
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ pause_media_player != {} }}"
+                        sequence:
+                          - service: media_player.media_play
+                            target: !input pause_media_player
+                            data: {}
+              - conditions:
+                  - condition: and
+                    conditions:
+                      - condition: trigger
+                        id: maghrib_trigger
+                      - condition: template
+                        value_template: "{{ play_maghrib == true }}"
+                sequence:
+                  # CHANGE 3: Conditional Pause
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ pause_media_player != {} }}"
+                        sequence:
+                          - service: media_player.media_pause
+                            target: !input pause_media_player
+                            data: {}
+
+                  # Conditional Mute
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ mute_tv != {} }}"
+                        sequence:
+                          - service: media_player.volume_mute
+                            target:
+                              entity_id: !input mute_tv
+                            data:
+                              is_volume_muted: true
+
+                  - service: media_player.play_media
+                    target: !input play_media_player
+                    data:
+                      media_content_id: !input iftaar_mp3
+                      media_content_type: mp3
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: 2
+                      milliseconds: 0
+                  - wait_template: "{{ is_state(wait_media_player, 'idle') }}"
+                    timeout: 00:05:00
+                  - service: media_player.play_media
+                    target: !input play_media_player
+                    data:
+                      media_content_id: !input adhan_mp3
+                      media_content_type: mp3
+                  - condition: template
+                    value_template: "{{ media_resume }}"
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: 2
+                      milliseconds: 0
+                  - wait_template: "{{ is_state(wait_media_player, 'idle') }}"
+                    timeout: 00:05:00
+
+                  # CHANGE 3: Conditional Resume
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ pause_media_player != {} }}"
+                        sequence:
+                          - service: media_player.media_play
+                            target: !input pause_media_player
+                            data: {}
+              - conditions:
+                  - condition: or
+                    conditions:
+                      - condition: and
+                        conditions:
+                          - condition: trigger
+                            id: dhuhr_trigger
+                          - condition: template
+                            value_template: "{{ play_dhuhr == true }}"
+                      - condition: and
+                        conditions:
+                          - condition: trigger
+                            id: asr_trigger
+                          - condition: template
+                            value_template: "{{ play_asr == true }}"
+                      - condition: and
+                        conditions:
+                          - condition: trigger
+                            id: isha_trigger
+                          - condition: template
+                            value_template: "{{ play_isha == true }}"
+                sequence:
+                  # CHANGE 3: Conditional Pause
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ pause_media_player != {} }}"
+                        sequence:
+                          - service: media_player.media_pause
+                            target: !input pause_media_player
+                            data: {}
+
+                  # Conditional Mute
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ mute_tv != {} }}"
+                        sequence:
+                          - service: media_player.volume_mute
+                            target:
+                              entity_id: !input mute_tv
+                            data:
+                              is_volume_muted: true
+
+                  - service: media_player.play_media
+                    target: !input play_media_player
+                    data:
+                      media_content_id: !input adhan_mp3
+                      media_content_type: mp3
+                  - condition: template
+                    value_template: "{{ media_resume }}"
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: 2
+                      milliseconds: 0
+                  - wait_template: "{{ is_state(wait_media_player, 'idle') }}"
+                    timeout: 00:05:00
+
+                  # CHANGE 3: Conditional Resume
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ pause_media_player != {} }}"
+                        sequence:
+                          - service: media_player.media_play
+                            target: !input pause_media_player
+                            data: {}
+    default:
+      - choose:
+          - conditions:
+              - condition: and
+                conditions:
+                  - condition: trigger
+                    id: fajr_trigger
+                  - condition: template
+                    value_template: "{{ play_fajr == true }}"
+            sequence:
+              # CHANGE 3: Conditional Pause
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ pause_media_player != {} }}"
+                    sequence:
+                      - service: media_player.media_pause
+                        target: !input pause_media_player
+                        data: {}
+
+              # Conditional Mute
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ mute_tv != {} }}"
+                    sequence:
+                      - service: media_player.volume_mute
+                        target:
+                          entity_id: !input mute_tv
+                        data:
+                          is_volume_muted: true
+
+              - service: media_player.play_media
+                target: !input play_media_player
+                data:
+                  media_content_id: !input fajr_mp3
+                  media_content_type: mp3
+              - condition: template
+                value_template: "{{ media_resume }}"
+              - delay:
+                  hours: 0
+                  minutes: 0
+                  seconds: 2
+                  milliseconds: 0
+              - wait_template: "{{ is_state(wait_media_player, 'idle') }}"
+                timeout: 00:05:00
+
+              # CHANGE 3: Conditional Resume
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ pause_media_player != {} }}"
+                    sequence:
+                      - service: media_player.media_play
+                        target: !input pause_media_player
+                        data: {}
+          - conditions:
+              - condition: or
+                conditions:
+                  - condition: and
+                    conditions:
+                      - condition: trigger
+                        id: dhuhr_trigger
+                      - condition: template
+                        value_template: "{{ play_dhuhr == true }}"
+                  - condition: and
+                    conditions:
+                      - condition: trigger
+                        id: asr_trigger
+                      - condition: template
+                        value_template: "{{ play_asr == true }}"
+                  - condition: and
+                    conditions:
+                      - condition: trigger
+                        id: maghrib_trigger
+                      - condition: template
+                        value_template: "{{ play_maghrib == true }}"
+                  - condition: and
+                    conditions:
+                      - condition: trigger
+                        id: isha_trigger
+                      - condition: template
+                        value_template: "{{ play_isha == true }}"
+            sequence:
+              # CHANGE 3: Conditional Pause
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ pause_media_player != {} }}"
+                    sequence:
+                      - service: media_player.media_pause
+                        target: !input pause_media_player
+                        data: {}
+
+              # Conditional Mute
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ mute_tv != {} }}"
+                    sequence:
+                      - service: media_player.volume_mute
+                        target:
+                          entity_id: !input mute_tv
+                        data:
+                          is_volume_muted: true
+
+              - service: media_player.play_media
+                target: !input play_media_player
+                data:
+                  media_content_id: !input adhan_mp3
+                  media_content_type: mp3
+              - condition: template
+                value_template: "{{ media_resume }}"
+              - delay:
+                  hours: 0
+                  minutes: 0
+                  seconds: 2
+                  milliseconds: 0
+              - wait_template: "{{ is_state(wait_media_player, 'idle') }}"
+                timeout: 00:05:00
+
+              # CHANGE 3: Conditional Resume
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ pause_media_player != {} }}"
+                    sequence:
+                      - service: media_player.media_play
+                        target: !input pause_media_player
+                        data: {}
